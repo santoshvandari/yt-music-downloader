@@ -315,6 +315,10 @@ class ModernDownloader:
         self.root.update()
     
     def progress_callback(self, stream, chunk, bytes_remaining):
+        # Check stop flag during download
+        if self.stop_download:
+            raise Exception("Download stopped by user")
+            
         total_size = stream.filesize
         bytes_downloaded = total_size - bytes_remaining
         percentage = (bytes_downloaded / total_size) * 100
@@ -350,6 +354,9 @@ class ModernDownloader:
     
     def download_and_convert(self, video_url, out_folder, video_index=None, total_videos=None):
         try:
+            # Check stop flag at the beginning
+            self.check_stop_flag()
+            
             # Reset progress tracking
             self.last_bytes_downloaded = 0
             self.last_update_time = time.time()
@@ -357,6 +364,7 @@ class ModernDownloader:
             # Fetch video info
             self.status_var.set("🔍 Fetching video information...")
             self.root.update()
+            self.check_stop_flag()
             
             yt = YouTube(video_url, on_progress_callback=self.progress_callback)
             
@@ -367,6 +375,7 @@ class ModernDownloader:
             
             self.current_file_var.set(file_info)
             self.log_message(f"🎵 Found: {yt.title}")
+            self.check_stop_flag()
             
             # Get audio stream
             self.status_var.set("⬇️ Downloading audio stream...")
@@ -376,9 +385,11 @@ class ModernDownloader:
                 raise Exception("No audio stream available")
             
             self.log_message(f"📊 File size: {audio_stream.filesize / (1024*1024):.1f} MB")
+            self.check_stop_flag()
             
             # Download
             downloaded_path = audio_stream.download(output_path=out_folder)
+            self.check_stop_flag()
             
             # Convert to MP3
             self.status_var.set("🔄 Converting to MP3...")
@@ -391,6 +402,7 @@ class ModernDownloader:
             # Show conversion progress with realistic animation
             conversion_steps = [0, 25, 50, 75, 90, 100]
             for i, step in enumerate(conversion_steps):
+                self.check_stop_flag()  # Check before each step
                 self.update_progress_bar(step)
                 self.progress_var.set(f"Converting... {step}%")
                 self.download_speed_var.set("Converting...")
@@ -399,11 +411,14 @@ class ModernDownloader:
                 time.sleep(0.2)
             
             # Actual conversion with proper parameters
+            self.check_stop_flag()
             try:
                 with AudioFileClip(downloaded_path) as audio_clip:
                     # Use only supported parameters
                     audio_clip.write_audiofile(mp3_path, bitrate="320k")
             except Exception as conv_error:
+                if "stopped by user" in str(conv_error):
+                    raise conv_error
                 # Fallback conversion without bitrate if it fails
                 self.log_message(f"⚠️ Trying alternative conversion method...")
                 with AudioFileClip(downloaded_path) as audio_clip:
@@ -412,6 +427,8 @@ class ModernDownloader:
             # Cleanup
             if os.path.exists(downloaded_path):
                 os.remove(downloaded_path)
+            
+            self.check_stop_flag()
             
             # Success
             self.log_message(f"✅ Completed: {yt.title}")
@@ -423,12 +440,26 @@ class ModernDownloader:
             time.sleep(1)  # Show completion briefly
             
         except Exception as e:
-            self.log_message(f"❌ Error: {str(e)}")
-            self.status_var.set("❌ Download failed")
-            raise e
+            if "stopped by user" in str(e):
+                # Clean up partial downloads
+                try:
+                    if 'downloaded_path' in locals() and os.path.exists(downloaded_path):
+                        os.remove(downloaded_path)
+                    if 'mp3_path' in locals() and os.path.exists(mp3_path):
+                        os.remove(mp3_path)
+                except:
+                    pass
+                self.log_message("🛑 Download stopped by user")
+                self.status_var.set("🛑 Download stopped")
+                raise e
+            else:
+                self.log_message(f"❌ Error: {str(e)}")
+                self.status_var.set("❌ Download failed")
+                raise e
     
     def process_playlist(self, playlist_url, out_folder):
         try:
+            self.check_stop_flag()
             self.status_var.set("🔍 Analyzing playlist...")
             self.log_message("🔍 Analyzing playlist...")
             
@@ -438,15 +469,22 @@ class ModernDownloader:
             
             self.log_message(f"📋 Found playlist with {total_videos} videos")
             self.total_files_var.set(f"Playlist: {total_videos} videos")
+            self.check_stop_flag()
             
             for index, url in enumerate(video_urls, 1):
+                self.check_stop_flag()  # Check before each video
                 self.status_var.set(f"📹 Processing video {index}/{total_videos}")
                 self.download_and_convert(url, out_folder, index, total_videos)
                 
         except Exception as e:
-            self.log_message(f"❌ Playlist error: {str(e)}")
-            self.status_var.set("❌ Playlist processing failed")
-            raise e
+            if "stopped by user" in str(e):
+                self.log_message("🛑 Playlist download stopped by user")
+                self.status_var.set("🛑 Playlist stopped")
+                raise e
+            else:
+                self.log_message(f"❌ Playlist error: {str(e)}")
+                self.status_var.set("❌ Playlist processing failed")
+                raise e
     
     def start_download(self):
         if self.is_downloading:
@@ -569,3 +607,40 @@ class ModernDownloader:
         """URL field focus out event"""
         if not self.url_entry.get().strip():
             self.url_status_label.config(text="", fg='#16537e')
+    
+    def stop_download_process(self):
+        """Stop the current download process"""
+        if self.is_downloading:
+            self.stop_download = True
+            self.log_message("🛑 Stopping download...")
+            self.status_var.set("🛑 Stopping download...")
+            
+            # Update UI immediately
+            self.stop_btn.configure(text="⏳ Stopping...", state='disabled', bg='#666666')
+            self.root.update()
+    
+    def check_stop_flag(self):
+        """Check if download should be stopped"""
+        if self.stop_download:
+            raise Exception("Download stopped by user")
+    
+    def reset_download_state(self):
+        """Reset download state and UI"""
+        self.is_downloading = False
+        self.stop_download = False
+        self.download_thread = None
+        
+        # Reset UI
+        self.download_btn.configure(text="🚀 Start Download", state='normal', bg='#00ff41')
+        self.download_btn.pack(side='left', padx=(0, 10))
+        
+        self.stop_btn.configure(text="⛔ Stop Download", state='normal', bg='#ff4757')
+        self.stop_btn.pack_forget()
+        
+        # Clear progress info
+        self.current_file_var.set("")
+        self.total_files_var.set("")
+        self.download_speed_var.set("")
+        self.eta_var.set("")
+        self.progress_var.set("0%")
+        self.update_progress_bar(0)
