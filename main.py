@@ -1,7 +1,6 @@
+from pytubefix import YouTube, Playlist
+from moviepy import AudioFileClip
 import os
-import re
-from pytube import YouTube, Playlist
-from moviepy.editor import AudioFileClip
 
 def download_and_convert(video_url, out_folder):
     yt = YouTube(video_url)
@@ -10,12 +9,10 @@ def download_and_convert(video_url, out_folder):
     downloaded_path = audio_stream.download(output_path=out_folder)
     base, _ = os.path.splitext(downloaded_path)
     mp3_path = base + '.mp3'
-    print(f"Converting to MP3: {mp3_path}")
-    audio_clip = AudioFileClip(downloaded_path)
-    audio_clip.write_audiofile(mp3_path, bitrate="320k")
-    audio_clip.close()
-    os.remove(downloaded_path)  # remove the original file
-    print("Done.\n")
+    with AudioFileClip(downloaded_path) as audio_clip:
+        audio_clip.write_audiofile(mp3_path, bitrate="320k")
+    os.remove(downloaded_path)
+    print("Done.")
 
 def process_playlist(playlist_url, out_folder):
     pl = Playlist(playlist_url)
