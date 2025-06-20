@@ -1,0 +1,2 @@
+#!/bin/bash
+python3 /opt/yt-music-downloader/src/main.py
