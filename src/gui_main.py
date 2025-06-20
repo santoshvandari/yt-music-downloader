@@ -502,8 +502,13 @@ class ModernDownloader:
         folder = self.folder_var.get() or "downloads"
         os.makedirs(folder, exist_ok=True)
         
+        # Reset stop flag and set downloading state
+        self.stop_download = False
         self.is_downloading = True
+        
+        # Update UI - show stop button, hide start button
         self.download_btn.configure(text="⏳ Downloading...", state='disabled', bg='#666666')
+        self.stop_btn.pack(side='left')
         
         def task():
             try:
@@ -513,23 +518,22 @@ class ModernDownloader:
                     self.total_files_var.set("Single video")
                     self.download_and_convert(url, folder)
                     
-                self.status_var.set("✅ All downloads completed!")
-                self.log_message("🎉 All downloads finished successfully!")
+                # Only show success if not stopped
+                if not self.stop_download:
+                    self.status_var.set("✅ All downloads completed!")
+                    self.log_message("🎉 All downloads finished successfully!")
                 
             except Exception as e:
-                self.log_message(f"❌ Unexpected error: {str(e)}")
-                self.status_var.set("❌ Download failed")
+                if "stopped by user" not in str(e):
+                    self.log_message(f"❌ Unexpected error: {str(e)}")
+                    self.status_var.set("❌ Download failed")
             finally:
-                self.is_downloading = False
-                self.download_btn.configure(text="🚀 Start Download", state='normal', bg='#00ff41')
-                self.current_file_var.set("")
-                self.total_files_var.set("")
-                self.download_speed_var.set("")
-                self.eta_var.set("")
-                self.progress_var.set("0%")
-                self.update_progress_bar(0)
+                # Reset UI state
+                self.root.after(0, self.reset_download_state)
         
-        threading.Thread(target=task, daemon=True).start()
+        # Start download in separate thread
+        self.download_thread = threading.Thread(target=task, daemon=True)
+        self.download_thread.start()
     
     def browse_folder(self):
         folder = filedialog.askdirectory()
@@ -539,7 +543,6 @@ class ModernDownloader:
     def run(self):
         # Add button hover effects
         self.animate_button(self.download_btn, '#00ff41', '#00cc33')
-        self.animate_button(self.stop_btn, '#ff4757', '#ff3838')
         
         # Start animation loop for progress bar
         def animate_progress():
@@ -644,3 +647,7 @@ class ModernDownloader:
         self.eta_var.set("")
         self.progress_var.set("0%")
         self.update_progress_bar(0)
+
+if __name__ == "__main__":
+    app = ModernDownloader()
+    app.run()
