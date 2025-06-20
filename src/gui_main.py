@@ -97,7 +97,8 @@ class ModernDownloader:
         # Add placeholder text with better visibility
         self.url_placeholder = "🎵 Paste your YouTube URL here (Ctrl+V)"
         self.url_entry.insert(0, self.url_placeholder)
-        self.url_entry.configure(fg='#8e8e93')  # Better placeholder color
+        self.url_entry.configure(fg='#666666')  # Better placeholder color
+        self.url_entry.is_placeholder = True  # Initialize placeholder flag
         
         # Button container for URL actions
         url_buttons_frame = Frame(url_inner_frame, bg='#1e1e2e')
@@ -299,14 +300,12 @@ class ModernDownloader:
             progress_width = (percentage / 100) * canvas_width
             
             # Background
-            self.progress_canvas.create_rectangle(0, 0, canvas_width, 30, 
-                                                 fill='#0f0f23', outline='')
+            self.progress_canvas.create_rectangle(0, 0, canvas_width, 30, fill='#0f0f23', outline='')
             
             # Progress bar with gradient effect
             if progress_width > 0:
                 # Main progress bar
-                self.progress_canvas.create_rectangle(0, 0, progress_width, 30, 
-                                                     fill='#00ff41', outline='')
+                self.progress_canvas.create_rectangle(0, 0, progress_width, 30, fill='#00ff41', outline='')
                 
                 # Animated shine effect
                 if self.is_downloading and percentage < 100:
@@ -316,13 +315,10 @@ class ModernDownloader:
                     shine_end = min(shine_start + shine_width, progress_width)
                     
                     if shine_start < progress_width:
-                        self.progress_canvas.create_rectangle(shine_start, 0, shine_end, 30,
-                                                             fill='#ffffff', stipple='gray25', outline='')
+                        self.progress_canvas.create_rectangle(shine_start, 0, shine_end, 30, fill='#ffffff', stipple='gray25')
             
             # Progress text
-            self.progress_canvas.create_text(canvas_width//2, 15, text=f"{percentage:.1f}%",
-                                           fill='#000000' if percentage > 50 else '#ffffff', 
-                                           font=('Arial', 11, 'bold'))
+            self.progress_canvas.create_text(canvas_width//2, 15, text=f"{percentage:.1f}%",fill='#000000' if percentage > 50 else '#ffffff', font=('Arial', 11, 'bold'))
     
     def log_message(self, message):
         timestamp = time.strftime("%H:%M:%S")
@@ -510,7 +506,8 @@ class ModernDownloader:
         url = self.url_entry.get().strip()
         
         # Check if it's placeholder text or empty
-        if not url or url == self.url_placeholder:
+        if (not url or url == self.url_placeholder or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
             self.log_message("❌ Please enter a YouTube URL")
             # Highlight the URL field
             self.url_status_label.config(text="❌ Please enter a YouTube URL", fg='#ff4757')
@@ -616,34 +613,77 @@ class ModernDownloader:
     def paste_url(self):
         """Paste URL from clipboard"""
         try:
-            # Clear placeholder if present
-            current_text = self.url_entry.get()
-            if current_text == self.url_placeholder:
-                self.url_entry.delete(0, END)
-            
             clipboard_content = self.root.clipboard_get()
+            
+            # Always clear the field first
             self.url_entry.delete(0, END)
             self.url_entry.insert(0, clipboard_content)
             self.url_entry.configure(fg='#ffffff')  # Set normal text color
+            self.url_entry.is_placeholder = False
+            
             self.validate_url()
             self.log_message("📋 URL pasted from clipboard")
         except Exception:
             self.log_message("❌ Nothing to paste from clipboard")
     
     def clear_url(self):
-        """Clear URL input field"""
+        """Clear URL input field and reset to placeholder"""
         self.url_entry.delete(0, END)
         self.url_entry.insert(0, self.url_placeholder)
-        self.url_entry.configure(fg='#8e8e93')  # Better placeholder color
+        self.url_entry.configure(fg='#666666')  # Placeholder color
         self.url_status_label.config(text="", fg='#16537e')
+        # Set a flag to indicate placeholder is active
+        self.url_entry.is_placeholder = True
         self.log_message("🗑️ URL field cleared")
+    
+    def on_key_press(self, event):
+        """Handle key press events to clear placeholder"""
+        current_text = self.url_entry.get()
+        # Check if placeholder is active or if current text matches placeholder
+        if (current_text == self.url_placeholder or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
+            # Clear placeholder when user starts typing (except for navigation keys)
+            if event.keysym not in ['Left', 'Right', 'Up', 'Down', 'Home', 'End', 'Tab', 'Shift_L', 'Shift_R', 'Control_L', 'Control_R']:
+                self.url_entry.delete(0, END)
+                self.url_entry.configure(fg='#ffffff')
+                self.url_entry.is_placeholder = False
+    
+    def on_key_release(self, event):
+        """Handle key release events for URL validation"""
+        # Only validate if it's not placeholder text
+        current_text = self.url_entry.get()
+        if (current_text != self.url_placeholder and 
+            not (hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder)):
+            self.validate_url()
+    
+    def on_url_focus_in(self, event):
+        """URL field focus in event"""
+        current_text = self.url_entry.get()
+        if (current_text == self.url_placeholder or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
+            # Don't clear on focus, only on typing
+            self.url_status_label.config(text="💡 Enter a YouTube video or playlist URL", fg='#f3f3f3')
+    
+    def on_url_focus_out(self, event):
+        """URL field focus out event"""
+        current_text = self.url_entry.get().strip()
+        if not current_text or current_text == self.url_placeholder:
+            self.url_entry.delete(0, END)
+            self.url_entry.insert(0, self.url_placeholder)
+            self.url_entry.configure(fg='#666666')
+            self.url_entry.is_placeholder = True
+            self.url_status_label.config(text="", fg='#16537e')
+        else:
+            self.url_entry.is_placeholder = False
+            self.validate_url()
     
     def validate_url(self, event=None):
         """Real-time URL validation"""
         url = self.url_entry.get().strip()
         
         # If it's placeholder text, don't validate
-        if url == self.url_placeholder or not url:
+        if (url == self.url_placeholder or not url or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
             self.url_status_label.config(text="", fg='#16537e')
             return
         
@@ -656,24 +696,6 @@ class ModernDownloader:
             self.url_status_label.config(text="⚠️ Please use full YouTube URL (https://...)", fg='#ffa502')
         else:
             self.url_status_label.config(text="❌ Invalid URL - Please enter a YouTube URL", fg='#ff4757')
-    
-    def on_url_focus_in(self, event):
-        """URL field focus in event"""
-        current_text = self.url_entry.get()
-        if current_text == self.url_placeholder:
-            self.url_entry.delete(0, END)
-            self.url_entry.configure(fg='#ffffff')
-            self.url_status_label.config(text="💡 Enter a YouTube video or playlist URL", fg='#f3f3f3')
-    
-    def on_url_focus_out(self, event):
-        """URL field focus out event"""
-        current_text = self.url_entry.get().strip()
-        if not current_text:
-            self.url_entry.insert(0, self.url_placeholder)
-            self.url_entry.configure(fg='#666666')
-            self.url_status_label.config(text="", fg='#16537e')
-        else:
-            self.validate_url()
     
     def stop_download_process(self):
         """Stop the current download process"""
@@ -715,4 +737,3 @@ class ModernDownloader:
 if __name__ == "__main__":
     app = ModernDownloader()
     app.run()
- 

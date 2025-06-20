@@ -20,3 +20,5 @@ dist/
 .spec
 *.mp3
 *.mp4
+*/*.mp3
+*/*.mp4
