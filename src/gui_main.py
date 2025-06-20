@@ -78,38 +78,49 @@ class ModernDownloader:
                          bg='#1a1a2e', fg='#ffffff', font=('Arial', 12, 'bold'))
         url_label.pack(anchor='w', pady=(0, 8))
         
-        # Modern URL input container with rounded corners effect
-        url_container = Frame(url_frame, bg='#16537e', height=48)
-        url_container.pack(fill='x', pady=(0, 5))
+        # Modern URL input container with enhanced styling
+        url_container = Frame(url_frame, bg='#2c2c54', height=52)
+        url_container.pack(fill='x', pady=(0, 8))
         url_container.pack_propagate(False)
         
-        # Inner URL frame
-        url_inner_frame = Frame(url_container, bg='#0f0f23')
-        url_inner_frame.pack(fill='both', expand=True, padx=2, pady=2)
+        # Inner URL frame with better contrast
+        url_inner_frame = Frame(url_container, bg='#1e1e2e')
+        url_inner_frame.pack(fill='both', expand=True, padx=3, pady=3)
         
-        # URL entry with enhanced styling
-        self.url_entry = Entry(url_inner_frame, font=('Arial', 12), bg='#0f0f23', fg='#ffffff', 
-                              insertbackground='#ffffff', relief='flat', bd=0,
-                              selectbackground='#00ff41', selectforeground='#000000')
-        self.url_entry.pack(side='left', fill='both', expand=True, padx=12, pady=12)
+        # URL entry with enhanced styling and no borders
+        self.url_entry = Entry(url_inner_frame, font=('Arial', 13), bg='#1e1e2e', fg='#ffffff', 
+                              insertbackground='#00ff41', relief='flat', bd=0,
+                              selectbackground='#00ff41', selectforeground='#000000',
+                              highlightthickness=0, borderwidth=0)
+        self.url_entry.pack(side='left', fill='both', expand=True, padx=15, pady=13)
+        
+        # Add placeholder text with better visibility
+        self.url_placeholder = "🎵 Paste your YouTube URL here (Ctrl+V)"
+        self.url_entry.insert(0, self.url_placeholder)
+        self.url_entry.configure(fg='#666666')  # Better placeholder color
+        self.url_entry.is_placeholder = True  # Initialize placeholder flag
         
         # Button container for URL actions
-        url_buttons_frame = Frame(url_inner_frame, bg='#0f0f23')
+        url_buttons_frame = Frame(url_inner_frame, bg='#1e1e2e')
         url_buttons_frame.pack(side='right', padx=(5, 8), pady=8)
         
-        # Paste button with modern styling
+        # Paste button with modern styling and tooltip effect
         paste_btn = Button(url_buttons_frame, text="📋", command=self.paste_url,
                           bg='#00ff41', fg='#000000', font=('Arial', 12, 'bold'),
-                          relief='flat', bd=0, padx=8, pady=4, cursor='hand2',
+                          relief='flat', bd=0, padx=10, pady=5, cursor='hand2',
                           activebackground='#00cc33', activeforeground='#000000')
         paste_btn.pack(side='left', padx=(0, 5))
         
         # Clear button with modern styling
         clear_btn = Button(url_buttons_frame, text="🗑️", command=self.clear_url,
                           bg='#ff4757', fg='#ffffff', font=('Arial', 12, 'bold'),
-                          relief='flat', bd=0, padx=8, pady=4, cursor='hand2',
+                          relief='flat', bd=0, padx=10, pady=5, cursor='hand2',
                           activebackground='#ff3838', activeforeground='#ffffff')
         clear_btn.pack(side='left')
+        
+        # Add hover effects for buttons
+        self.add_button_hover_effect(paste_btn, '#00ff41', '#00cc33')
+        self.add_button_hover_effect(clear_btn, '#ff4757', '#ff3838')
         
         # URL validation indicator
         self.url_status_frame = Frame(url_frame, bg='#1a1a2e')
@@ -119,8 +130,9 @@ class ModernDownloader:
                                      bg='#1a1a2e', fg='#16537e', font=('Arial', 9, 'italic'))
         self.url_status_label.pack(anchor='w')
         
-        # Bind events for real-time URL validation
-        self.url_entry.bind('<KeyRelease>', self.validate_url)
+        # Bind events for real-time URL validation and placeholder handling
+        self.url_entry.bind('<KeyRelease>', self.on_key_release)
+        self.url_entry.bind('<KeyPress>', self.on_key_press)
         self.url_entry.bind('<FocusIn>', self.on_url_focus_in)
         self.url_entry.bind('<FocusOut>', self.on_url_focus_out)
         
@@ -132,25 +144,27 @@ class ModernDownloader:
                             bg='#1a1a2e', fg='#ffffff', font=('Arial', 12, 'bold'))
         folder_label.pack(anchor='w', pady=(0, 8))
         
-        # Modern folder input container
-        folder_container = Frame(folder_frame, bg='#16537e', height=48)
-        folder_container.pack(fill='x', pady=(0, 5))
+        # Modern folder input container with enhanced styling
+        folder_container = Frame(folder_frame, bg='#2c2c54', height=48)
+        folder_container.pack(fill='x', pady=(0, 8))
         folder_container.pack_propagate(False)
         
-        folder_inner_frame = Frame(folder_container, bg='#0f0f23')
-        folder_inner_frame.pack(fill='both', expand=True, padx=2, pady=2)
+        # Inner folder frame with better contrast
+        folder_inner_frame = Frame(folder_container, bg='#1e1e2e')
+        folder_inner_frame.pack(fill='both', expand=True, padx=3, pady=3)
         
         self.folder_entry = Entry(folder_inner_frame, textvariable=self.folder_var, 
-                                 font=('Arial', 12), bg='#0f0f23', fg='#ffffff', 
-                                 insertbackground='#ffffff', relief='flat', bd=0,
-                                 selectbackground='#00ff41', selectforeground='#000000')
-        self.folder_entry.pack(side='left', fill='both', expand=True, padx=12, pady=12)
+                                 font=('Arial', 12), bg='#1e1e2e', fg='#ffffff', 
+                                 insertbackground='#00ff41', relief='flat', bd=0,
+                                 selectbackground='#00ff41', selectforeground='#000000',
+                                 highlightthickness=0, borderwidth=0)
+        self.folder_entry.pack(side='left', fill='both', expand=True, padx=15, pady=12)
         
         browse_btn = Button(folder_inner_frame, text="📁 Browse", command=self.browse_folder,
-                           bg='#16537e', fg='#ffffff', font=('Arial', 11, 'bold'),
+                           bg='#00ff41', fg='#000000', font=('Arial', 11, 'bold'),
                            relief='flat', bd=0, padx=20, pady=8, cursor='hand2',
-                           activebackground='#1e6091', activeforeground='#ffffff')
-        browse_btn.pack(side='right', padx=(5, 8), pady=8)
+                           activebackground='#00cc33', activeforeground='#000000')
+        browse_btn.pack(side='right', padx=(8, 8), pady=8)
         
         # Enhanced Progress Section
         progress_frame = Frame(main_frame, bg='#1a1a2e')
@@ -275,6 +289,10 @@ class ModernDownloader:
         button.bind("<Enter>", on_enter)
         button.bind("<Leave>", on_leave)
     
+    def add_button_hover_effect(self, button, original_color, hover_color):
+        """Add hover effect to button"""
+        self.animate_button(button, original_color, hover_color)
+    
     def update_progress_bar(self, percentage):
         self.progress_canvas.delete("all")
         canvas_width = self.progress_canvas.winfo_width()
@@ -282,14 +300,12 @@ class ModernDownloader:
             progress_width = (percentage / 100) * canvas_width
             
             # Background
-            self.progress_canvas.create_rectangle(0, 0, canvas_width, 30, 
-                                                 fill='#0f0f23', outline='')
+            self.progress_canvas.create_rectangle(0, 0, canvas_width, 30, fill='#0f0f23', outline='')
             
             # Progress bar with gradient effect
             if progress_width > 0:
                 # Main progress bar
-                self.progress_canvas.create_rectangle(0, 0, progress_width, 30, 
-                                                     fill='#00ff41', outline='')
+                self.progress_canvas.create_rectangle(0, 0, progress_width, 30, fill='#00ff41', outline='')
                 
                 # Animated shine effect
                 if self.is_downloading and percentage < 100:
@@ -299,13 +315,10 @@ class ModernDownloader:
                     shine_end = min(shine_start + shine_width, progress_width)
                     
                     if shine_start < progress_width:
-                        self.progress_canvas.create_rectangle(shine_start, 0, shine_end, 30,
-                                                             fill='#ffffff', stipple='gray25', outline='')
+                        self.progress_canvas.create_rectangle(shine_start, 0, shine_end, 30, fill='#ffffff', stipple='gray25')
             
             # Progress text
-            self.progress_canvas.create_text(canvas_width//2, 15, text=f"{percentage:.1f}%",
-                                           fill='#000000' if percentage > 50 else '#ffffff', 
-                                           font=('Arial', 11, 'bold'))
+            self.progress_canvas.create_text(canvas_width//2, 15, text=f"{percentage:.1f}%",fill='#000000' if percentage > 50 else '#ffffff', font=('Arial', 11, 'bold'))
     
     def log_message(self, message):
         timestamp = time.strftime("%H:%M:%S")
@@ -315,6 +328,10 @@ class ModernDownloader:
         self.root.update()
     
     def progress_callback(self, stream, chunk, bytes_remaining):
+        # Check stop flag during download
+        if self.stop_download:
+            raise Exception("Download stopped by user")
+            
         total_size = stream.filesize
         bytes_downloaded = total_size - bytes_remaining
         percentage = (bytes_downloaded / total_size) * 100
@@ -350,6 +367,9 @@ class ModernDownloader:
     
     def download_and_convert(self, video_url, out_folder, video_index=None, total_videos=None):
         try:
+            # Check stop flag at the beginning
+            self.check_stop_flag()
+            
             # Reset progress tracking
             self.last_bytes_downloaded = 0
             self.last_update_time = time.time()
@@ -357,6 +377,7 @@ class ModernDownloader:
             # Fetch video info
             self.status_var.set("🔍 Fetching video information...")
             self.root.update()
+            self.check_stop_flag()
             
             yt = YouTube(video_url, on_progress_callback=self.progress_callback)
             
@@ -367,6 +388,7 @@ class ModernDownloader:
             
             self.current_file_var.set(file_info)
             self.log_message(f"🎵 Found: {yt.title}")
+            self.check_stop_flag()
             
             # Get audio stream
             self.status_var.set("⬇️ Downloading audio stream...")
@@ -376,9 +398,11 @@ class ModernDownloader:
                 raise Exception("No audio stream available")
             
             self.log_message(f"📊 File size: {audio_stream.filesize / (1024*1024):.1f} MB")
+            self.check_stop_flag()
             
             # Download
             downloaded_path = audio_stream.download(output_path=out_folder)
+            self.check_stop_flag()
             
             # Convert to MP3
             self.status_var.set("🔄 Converting to MP3...")
@@ -391,6 +415,7 @@ class ModernDownloader:
             # Show conversion progress with realistic animation
             conversion_steps = [0, 25, 50, 75, 90, 100]
             for i, step in enumerate(conversion_steps):
+                self.check_stop_flag()  # Check before each step
                 self.update_progress_bar(step)
                 self.progress_var.set(f"Converting... {step}%")
                 self.download_speed_var.set("Converting...")
@@ -399,11 +424,14 @@ class ModernDownloader:
                 time.sleep(0.2)
             
             # Actual conversion with proper parameters
+            self.check_stop_flag()
             try:
                 with AudioFileClip(downloaded_path) as audio_clip:
                     # Use only supported parameters
                     audio_clip.write_audiofile(mp3_path, bitrate="320k")
             except Exception as conv_error:
+                if "stopped by user" in str(conv_error):
+                    raise conv_error
                 # Fallback conversion without bitrate if it fails
                 self.log_message(f"⚠️ Trying alternative conversion method...")
                 with AudioFileClip(downloaded_path) as audio_clip:
@@ -412,6 +440,8 @@ class ModernDownloader:
             # Cleanup
             if os.path.exists(downloaded_path):
                 os.remove(downloaded_path)
+            
+            self.check_stop_flag()
             
             # Success
             self.log_message(f"✅ Completed: {yt.title}")
@@ -423,12 +453,26 @@ class ModernDownloader:
             time.sleep(1)  # Show completion briefly
             
         except Exception as e:
-            self.log_message(f"❌ Error: {str(e)}")
-            self.status_var.set("❌ Download failed")
-            raise e
+            if "stopped by user" in str(e):
+                # Clean up partial downloads
+                try:
+                    if 'downloaded_path' in locals() and os.path.exists(downloaded_path):
+                        os.remove(downloaded_path)
+                    if 'mp3_path' in locals() and os.path.exists(mp3_path):
+                        os.remove(mp3_path)
+                except:
+                    pass
+                self.log_message("🛑 Download stopped by user")
+                self.status_var.set("🛑 Download stopped")
+                raise e
+            else:
+                self.log_message(f"❌ Error: {str(e)}")
+                self.status_var.set("❌ Download failed")
+                raise e
     
     def process_playlist(self, playlist_url, out_folder):
         try:
+            self.check_stop_flag()
             self.status_var.set("🔍 Analyzing playlist...")
             self.log_message("🔍 Analyzing playlist...")
             
@@ -438,34 +482,52 @@ class ModernDownloader:
             
             self.log_message(f"📋 Found playlist with {total_videos} videos")
             self.total_files_var.set(f"Playlist: {total_videos} videos")
+            self.check_stop_flag()
             
             for index, url in enumerate(video_urls, 1):
+                self.check_stop_flag()  # Check before each video
                 self.status_var.set(f"📹 Processing video {index}/{total_videos}")
                 self.download_and_convert(url, out_folder, index, total_videos)
                 
         except Exception as e:
-            self.log_message(f"❌ Playlist error: {str(e)}")
-            self.status_var.set("❌ Playlist processing failed")
-            raise e
+            if "stopped by user" in str(e):
+                self.log_message("🛑 Playlist download stopped by user")
+                self.status_var.set("🛑 Playlist stopped")
+                raise e
+            else:
+                self.log_message(f"❌ Playlist error: {str(e)}")
+                self.status_var.set("❌ Playlist processing failed")
+                raise e
     
     def start_download(self):
         if self.is_downloading:
             return
             
         url = self.url_entry.get().strip()
-        if not url:
+        
+        # Check if it's placeholder text or empty
+        if (not url or url == self.url_placeholder or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
             self.log_message("❌ Please enter a YouTube URL")
+            # Highlight the URL field
+            self.url_status_label.config(text="❌ Please enter a YouTube URL", fg='#ff4757')
             return
         
         if not url.startswith("http"):
             self.log_message("❌ Please enter a valid YouTube URL")
+            self.url_status_label.config(text="❌ Please enter a valid YouTube URL", fg='#ff4757')
             return
             
         folder = self.folder_var.get() or "downloads"
         os.makedirs(folder, exist_ok=True)
         
+        # Reset stop flag and set downloading state
+        self.stop_download = False
         self.is_downloading = True
+        
+        # Update UI - show stop button, hide start button
         self.download_btn.configure(text="⏳ Downloading...", state='disabled', bg='#666666')
+        self.stop_btn.pack(side='left')
         
         def task():
             try:
@@ -475,23 +537,22 @@ class ModernDownloader:
                     self.total_files_var.set("Single video")
                     self.download_and_convert(url, folder)
                     
-                self.status_var.set("✅ All downloads completed!")
-                self.log_message("🎉 All downloads finished successfully!")
+                # Only show success if not stopped
+                if not self.stop_download:
+                    self.status_var.set("✅ All downloads completed!")
+                    self.log_message("🎉 All downloads finished successfully!")
                 
             except Exception as e:
-                self.log_message(f"❌ Unexpected error: {str(e)}")
-                self.status_var.set("❌ Download failed")
+                if "stopped by user" not in str(e):
+                    self.log_message(f"❌ Unexpected error: {str(e)}")
+                    self.status_var.set("❌ Download failed")
             finally:
-                self.is_downloading = False
-                self.download_btn.configure(text="🚀 Start Download", state='normal', bg='#00ff41')
-                self.current_file_var.set("")
-                self.total_files_var.set("")
-                self.download_speed_var.set("")
-                self.eta_var.set("")
-                self.progress_var.set("0%")
-                self.update_progress_bar(0)
+                # Reset UI state
+                self.root.after(0, self.reset_download_state)
         
-        threading.Thread(target=task, daemon=True).start()
+        # Start download in separate thread
+        self.download_thread = threading.Thread(target=task, daemon=True)
+        self.download_thread.start()
     
     def browse_folder(self):
         folder = filedialog.askdirectory()
@@ -502,6 +563,14 @@ class ModernDownloader:
         # Add button hover effects
         self.animate_button(self.download_btn, '#00ff41', '#00cc33')
         self.animate_button(self.stop_btn, '#ff4757', '#ff3838')
+        
+        # Add hover effects for all buttons after widgets are created
+        def setup_button_hover():
+            # Find and add hover effects to browse button
+            for widget in self.root.winfo_children():
+                self._find_and_animate_buttons(widget)
+        
+        self.root.after(100, setup_button_hover)
         
         # Start animation loop for progress bar
         def animate_progress():
@@ -524,48 +593,147 @@ class ModernDownloader:
         
         self.root.protocol("WM_DELETE_WINDOW", on_closing)
         self.root.mainloop()
+    
+    def _find_and_animate_buttons(self, widget):
+        """Recursively find and animate buttons"""
+        try:
+            if isinstance(widget, Button):
+                text = widget.cget('text')
+                if "Browse" in text:
+                    self.animate_button(widget, '#00ff41', '#00cc33')
+                elif text == "🗑️ Clear":
+                    self.animate_button(widget, '#16537e', '#1e6091')
+            
+            # Recursively check children
+            for child in widget.winfo_children():
+                self._find_and_animate_buttons(child)
+        except:
+            pass
 
     def paste_url(self):
         """Paste URL from clipboard"""
         try:
             clipboard_content = self.root.clipboard_get()
+            
+            # Always clear the field first
             self.url_entry.delete(0, END)
             self.url_entry.insert(0, clipboard_content)
+            self.url_entry.configure(fg='#ffffff')  # Set normal text color
+            self.url_entry.is_placeholder = False
+            
             self.validate_url()
             self.log_message("📋 URL pasted from clipboard")
         except Exception:
             self.log_message("❌ Nothing to paste from clipboard")
     
     def clear_url(self):
-        """Clear URL input field"""
+        """Clear URL input field and reset to placeholder"""
         self.url_entry.delete(0, END)
+        self.url_entry.insert(0, self.url_placeholder)
+        self.url_entry.configure(fg='#666666')  # Placeholder color
         self.url_status_label.config(text="", fg='#16537e')
+        # Set a flag to indicate placeholder is active
+        self.url_entry.is_placeholder = True
         self.log_message("🗑️ URL field cleared")
+    
+    def on_key_press(self, event):
+        """Handle key press events to clear placeholder"""
+        current_text = self.url_entry.get()
+        # Check if placeholder is active or if current text matches placeholder
+        if (current_text == self.url_placeholder or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
+            # Clear placeholder when user starts typing (except for navigation keys)
+            if event.keysym not in ['Left', 'Right', 'Up', 'Down', 'Home', 'End', 'Tab', 'Shift_L', 'Shift_R', 'Control_L', 'Control_R']:
+                self.url_entry.delete(0, END)
+                self.url_entry.configure(fg='#ffffff')
+                self.url_entry.is_placeholder = False
+    
+    def on_key_release(self, event):
+        """Handle key release events for URL validation"""
+        # Only validate if it's not placeholder text
+        current_text = self.url_entry.get()
+        if (current_text != self.url_placeholder and 
+            not (hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder)):
+            self.validate_url()
+    
+    def on_url_focus_in(self, event):
+        """URL field focus in event"""
+        current_text = self.url_entry.get()
+        if (current_text == self.url_placeholder or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
+            # Don't clear on focus, only on typing
+            self.url_status_label.config(text="💡 Enter a YouTube video or playlist URL", fg='#f3f3f3')
+    
+    def on_url_focus_out(self, event):
+        """URL field focus out event"""
+        current_text = self.url_entry.get().strip()
+        if not current_text or current_text == self.url_placeholder:
+            self.url_entry.delete(0, END)
+            self.url_entry.insert(0, self.url_placeholder)
+            self.url_entry.configure(fg='#666666')
+            self.url_entry.is_placeholder = True
+            self.url_status_label.config(text="", fg='#16537e')
+        else:
+            self.url_entry.is_placeholder = False
+            self.validate_url()
     
     def validate_url(self, event=None):
         """Real-time URL validation"""
         url = self.url_entry.get().strip()
         
-        if not url:
+        # If it's placeholder text, don't validate
+        if (url == self.url_placeholder or not url or 
+            hasattr(self.url_entry, 'is_placeholder') and self.url_entry.is_placeholder):
             self.url_status_label.config(text="", fg='#16537e')
             return
         
         if url.startswith(('https://www.youtube.com', 'https://youtube.com', 'https://youtu.be', 'https://m.youtube.com')):
             if 'playlist' in url or 'list=' in url:
-                self.url_status_label.config(text="✅ Valid YouTube playlist URL detected", fg='#00ff41')
+                self.url_status_label.config(text="✅ Playlist URL detected", fg='#00ff41')
             else:
-                self.url_status_label.config(text="✅ Valid YouTube video URL detected", fg='#00ff41')
+                self.url_status_label.config(text="✅ Video URL detected", fg='#00ff41')
         elif 'youtube.com' in url or 'youtu.be' in url:
-            self.url_status_label.config(text="⚠️ Please use full YouTube URL (starting with https://)", fg='#ffa502')
+            self.url_status_label.config(text="⚠️ Please use full YouTube URL (https://...)", fg='#ffa502')
         else:
             self.url_status_label.config(text="❌ Invalid URL - Please enter a YouTube URL", fg='#ff4757')
     
-    def on_url_focus_in(self, event):
-        """URL field focus in event"""
-        if not self.url_entry.get().strip():
-            self.url_status_label.config(text="💡 Paste a YouTube video or playlist URL here", fg='#16537e')
+    def stop_download_process(self):
+        """Stop the current download process"""
+        if self.is_downloading:
+            self.stop_download = True
+            self.log_message("🛑 Stopping download...")
+            self.status_var.set("🛑 Stopping download...")
+            
+            # Update UI immediately
+            self.stop_btn.configure(text="⏳ Stopping...", state='disabled', bg='#666666')
+            self.root.update()
     
-    def on_url_focus_out(self, event):
-        """URL field focus out event"""
-        if not self.url_entry.get().strip():
-            self.url_status_label.config(text="", fg='#16537e')
+    def check_stop_flag(self):
+        """Check if download should be stopped"""
+        if self.stop_download:
+            raise Exception("Download stopped by user")
+    
+    def reset_download_state(self):
+        """Reset download state and UI"""
+        self.is_downloading = False
+        self.stop_download = False
+        self.download_thread = None
+        
+        # Reset UI
+        self.download_btn.configure(text="🚀 Start Download", state='normal', bg='#00ff41')
+        self.download_btn.pack(side='left', padx=(0, 10))
+        
+        self.stop_btn.configure(text="⛔ Stop Download", state='normal', bg='#ff4757')
+        self.stop_btn.pack_forget()
+        
+        # Clear progress info
+        self.current_file_var.set("")
+        self.total_files_var.set("")
+        self.download_speed_var.set("")
+        self.eta_var.set("")
+        self.progress_var.set("0%")
+        self.update_progress_bar(0)
+
+if __name__ == "__main__":
+    app = ModernDownloader()
+    app.run()
