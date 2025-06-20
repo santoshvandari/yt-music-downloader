@@ -18,3 +18,5 @@ dist/
 # macOS
 .DS_Store
 .spec
+*.mp3
+*.mp4
