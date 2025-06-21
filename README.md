@@ -117,6 +117,7 @@ build.bat
 ```
 
 The executable will be created in `dist/main.exe`
+Note: use the inno setup script for a proper installer and final packaging.
 
 ### Custom Build
 
