@@ -5,7 +5,7 @@ rmdir /s /q dist
 del /q main.spec
 
 echo Building executable with PyInstaller...
-pyinstaller --onefile --windowed --icon=icon.ico ..\..\src\main.py
+pyinstaller --onefile --windowed --icon=icon.ico ..\..\src\gui_main.py
 
 echo Build complete.
 pause
