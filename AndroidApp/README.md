@@ -1,16 +1,24 @@
-# yt_music_flutter
+# YouTube Music Downloader Pro (Flutter)
 
-A new Flutter project.
+A modern Flutter app that mirrors the original Python app's features:
 
-## Getting Started
+- Paste a YouTube video or playlist URL
+- Choose an output folder
+- Download highest bitrate audio
+- Convert to MP3 (320kbps) using FFmpeg when available
+- Realtime progress, speed, ETA, and logs
+- Stop/cancel in-progress downloads
 
-This project is a starting point for a Flutter application.
+## Run
 
-A few resources to get you started if this is your first Flutter project:
+Supported platforms: Android, Linux, Windows, macOS. (Web works for download only; no FFmpeg conversion.)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run -d linux   # or android, windows, macos
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Notes
+
+- Real transcoding uses `ffmpeg_kit_flutter_min`. If conversion fails, the app falls back to copying the original audio to `.mp3`.
+- On Android, minSdk is set to 24.
