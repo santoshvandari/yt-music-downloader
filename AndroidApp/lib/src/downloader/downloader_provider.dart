@@ -7,7 +7,6 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 // Only used on Android; safe to import cross-platform
-import 'package:downloads_path_provider_28/downloads_path_provider_28.dart' as dp28;
 
 class DownloadLogEntry {
   final DateTime time;
@@ -44,15 +43,28 @@ class DownloaderProvider extends ChangeNotifier {
     Directory? base;
     try {
       if (Platform.isAndroid) {
-        // Use public Downloads on Android
-        final dir = await dp28.DownloadsPathProvider.downloadsDirectory;
-        if (dir != null) base = Directory(dir.path);
+        // Common public Downloads path on Android
+        final candidate = Directory('/storage/emulated/0/Download');
+        if (await candidate.exists()) {
+          base = candidate;
+        } else {
+          // Fallback to external storage dir
+          final ext = await getExternalStorageDirectory();
+          if (ext != null) {
+            final maybeDownloads = Directory(p.join(ext.path.split('Android').first, 'Download'));
+            if (await maybeDownloads.exists()) {
+              base = maybeDownloads;
+            } else {
+              base = ext;
+            }
+          }
+        }
       } else {
         base = await getDownloadsDirectory();
       }
     } catch (_) {}
 
-    if (base == null) {
+  if (base == null) {
       // Fallback by platform
       try {
         if (Platform.isWindows) {
@@ -65,9 +77,10 @@ class DownloaderProvider extends ChangeNotifier {
       } catch (_) {}
     }
 
-    base ??= Directory.systemTemp;
-    outputDir = Directory(p.join(base.path, 'yt-music-downloads'));
-    try { if (!await outputDir!.exists()) { await outputDir!.create(recursive: true); } } catch (_) {}
+  base ??= Directory.systemTemp;
+  // Save directly into Downloads so other apps can find the files easily
+  outputDir = Directory(base.path);
+  try { if (!await outputDir!.exists()) { await outputDir!.create(recursive: true); } } catch (_) {}
     notifyListeners();
   }
 
