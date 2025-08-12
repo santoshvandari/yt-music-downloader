@@ -124,12 +124,17 @@ class DownloaderProvider extends ChangeNotifier {
       state = DownloadState.fetching;
       notifyListeners();
 
-      if (url.contains('list=')) {
-        // Playlist
-        final playlist = await yt.playlists.get(url);
-        final videos = await yt.playlists.getVideos(playlist.id).toList();
+      final kind = _classifyUrl(url);
+      if (kind.isPlaylist) {
+        // Resolve playlist by ID or URL
+        final pl = kind.playlistId != null
+            ? await yt.playlists.get(PlaylistId(kind.playlistId!))
+            : await yt.playlists.get(url);
+
+        // Stream videos and collect to list to show total count
+  final videos = await yt.playlists.getVideos(pl.id).toList();
         totalFilesText = 'Playlist: ${videos.length} videos';
-        _log('Found playlist: ${playlist.title} (${videos.length} videos)');
+        _log('Found playlist: ${pl.title} (${videos.length} videos)');
         int i = 0;
         for (final v in videos) {
           if (_stop) throw _Stopped();
@@ -138,7 +143,9 @@ class DownloaderProvider extends ChangeNotifier {
         }
       } else {
         totalFilesText = 'Single video';
-        final video = await yt.videos.get(url);
+        final video = kind.videoId != null
+            ? await yt.videos.get(VideoId(kind.videoId!))
+            : await yt.videos.get(url);
         await _downloadVideo(video);
       }
 
@@ -157,6 +164,37 @@ class DownloaderProvider extends ChangeNotifier {
     } finally {
       progress = progress == 0 ? 0 : 100;
       notifyListeners();
+    }
+  }
+
+  // Simple URL classifier to better detect playlists and extract IDs
+  _UrlKind _classifyUrl(String input) {
+    try {
+      final u = Uri.parse(input);
+      final host = u.host.toLowerCase();
+      final listParam = u.queryParameters['list'];
+      if (listParam != null && listParam.isNotEmpty) {
+        // Any URL with list= should be treated as playlist
+        return _UrlKind(isPlaylist: true, playlistId: listParam);
+      }
+      // Dedicated playlist path
+      if (host.contains('youtube.com') && u.path.contains('playlist')) {
+        return _UrlKind(isPlaylist: true);
+      }
+      // Video-only forms
+      String? vid;
+      if (host.contains('youtu.be')) {
+        // youtu.be/<id>
+        final seg = u.pathSegments.isNotEmpty ? u.pathSegments.first : null;
+        if (seg != null && seg.isNotEmpty) vid = seg;
+      } else if (host.contains('youtube.com') && u.path.contains('/watch')) {
+        vid = u.queryParameters['v'];
+      }
+      return _UrlKind(isPlaylist: false, videoId: vid);
+    } catch (_) {
+      // Fallback: basic heuristic
+      if (input.contains('list=')) return _UrlKind(isPlaylist: true);
+      return _UrlKind(isPlaylist: false);
     }
   }
 
@@ -286,3 +324,10 @@ class DownloaderProvider extends ChangeNotifier {
 }
 
 class _Stopped implements Exception {}
+
+class _UrlKind {
+  final bool isPlaylist;
+  final String? playlistId;
+  final String? videoId;
+  _UrlKind({required this.isPlaylist, this.playlistId, this.videoId});
+}
