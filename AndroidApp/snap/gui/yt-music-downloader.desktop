@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=YT Music Downloader
+Comment=Download YouTube Music tracks easily
+Exec=yt_music_downloader
+Icon=${SNAP}/meta/gui/icon.png
+Terminal=false
+Type=Application
+Categories=AudioVideo;Network;Education;
