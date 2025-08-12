@@ -38,6 +38,14 @@ Or build a release binary:
 ```bash
 flutter build linux
 ```
+```bash
+dart pub global activate flutter_distributor
+```
+```bash
+flutter_distributor package --platform linux --targets deb
+```
+Note: please change the `installed_size` in `make_config.yaml` to match the actual size of your application. Use the command `du -sk build/linux/x64/release/bundle | awk '{print $1}'` to get the size in kilobytes.
+
 
 ### Windows
 ```bash
