@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DownloaderProvider()),
       ],
       child: MaterialApp(
-        title: 'YouTube Music Downloader Pro',
+        title: 'YouTube Music Downloader',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           brightness: Brightness.dark,

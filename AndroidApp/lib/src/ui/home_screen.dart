@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-  title: const Text('YouTube Music Downloader Pro'),
+  title: const Text('YouTube Music Downloader'),
         centerTitle: true,
       ),
       body: LayoutBuilder(
