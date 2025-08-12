@@ -101,7 +101,11 @@ A modern, cross-platform application for downloading YouTube videos and playlist
 
    ### Snap (Linux)
 
-   Snap packaging is planned. For now, use the Linux (Flutter UI) steps above.
+   Run the following command.
+
+   ```bash
+   snap install yt-music-downloader
+   ```
 
 ## Usage Guide
 
