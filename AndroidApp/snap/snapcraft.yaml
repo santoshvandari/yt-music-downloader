@@ -9,13 +9,15 @@ confinement: strict
 
 apps:
   yt-music-downloader:
-    command: yt_music_downloader
+    command: bin/yt_music_downloader
     extensions: [gnome]
     plugs:
       - network
+      - home
+    desktop: yt_music_downloader.desktop
 
 parts:
   yt-music-downloader:
     source: .
     plugin: flutter
-    flutter-target: lib/main.dart
+    flutter-target: lib/main.dart # The main entry-point file of the application
