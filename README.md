@@ -77,6 +77,36 @@ A modern, cross-platform application for downloading YouTube videos and playlist
    python src/cli_main.py
    ```
 
+   ### Linux (Flutter UI)
+
+   Requires Flutter. Run the modern UI on Linux:
+
+   ```bash
+   cd AndroidApp
+   flutter pub get
+   flutter run -d linux
+   ```
+
+   ### Android (Flutter UI)
+
+   Build and install the Android app:
+
+   ```bash
+   cd AndroidApp
+   flutter pub get
+   flutter build apk --release
+   # optional: install to a connected device
+   adb install -r build/app/outputs/flutter-apk/app-release.apk
+   ```
+
+   ### Snap (Linux)
+
+   Run the following command.
+
+   ```bash
+   snap install yt-music-downloader
+   ```
+
 ## Usage Guide
 
 ### GUI Interface

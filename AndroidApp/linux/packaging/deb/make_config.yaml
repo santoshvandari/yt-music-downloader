@@ -1,0 +1,28 @@
+display_name: YT Music Downloader
+package_name: yt-music-downloader
+version: 1.0.0
+maintainer:
+  name: "Santosh Bhandari"
+  email: "info@bhandari-santosh.com.np"
+description: YT Music Downloader is a modern Flutter app for downloading high-quality audio from YouTube.
+section: sound
+priority: optional
+installed_size: 24856
+license: MIT
+homepage: https://github.com/santoshvandari/yt-music-downloader
+icon: linux/packaging/deb/icon.png
+postuninstall_scripts:
+  - update-desktop-database || true
+  - echo "Uninstalled YT Music Downloader"
+keywords:
+  - youtube
+  - music
+  - downloader
+dependencies:
+  - libgtk-3-0
+
+categories:
+  - AudioVideo
+  - Audio
+  - Utility
+generic_name: "Music Downloader"
