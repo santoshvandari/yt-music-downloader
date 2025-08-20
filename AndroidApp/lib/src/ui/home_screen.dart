@@ -339,15 +339,15 @@ class _ActionButtons extends StatelessWidget {
             ),
             child: const Text('Stop Download'),
           ),
-          if (Platform.isAndroid)
-            ElevatedButton(
-              onPressed: () => _checkPermissions(context, p),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF16537E),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Check Permissions'),
-            ),
+          // if (Platform.isAndroid)
+          //   ElevatedButton(
+          //     onPressed: () => _checkPermissions(context, p),
+          //     style: ElevatedButton.styleFrom(
+          //       backgroundColor: const Color(0xFF16537E),
+          //       foregroundColor: Colors.white,
+          //     ),
+          //     child: const Text('Check Permissions'),
+          //   ),
         ],
       ),
     );
@@ -371,38 +371,38 @@ class _ActionButtons extends StatelessWidget {
     await p.start();
   }
 
-  Future<void> _checkPermissions(BuildContext context, DownloaderProvider p) async {
-    final hasPermissions = await p.checkPermissions();
-    if (!context.mounted) return;
+  // Future<void> _checkPermissions(BuildContext context, DownloaderProvider p) async {
+  //   final hasPermissions = await p.checkPermissions();
+  //   if (!context.mounted) return;
     
-    if (!hasPermissions) {
-      final granted = await p.requestPermissions();
-      if (!context.mounted) return;
+  //   if (!hasPermissions) {
+  //     final granted = await p.requestPermissions();
+  //     if (!context.mounted) return;
       
-      if (granted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permissions granted successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permissions denied. Please grant storage permissions in app settings.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All required permissions are granted!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
+  //     if (granted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Permissions granted successfully!'),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Permissions denied. Please grant storage permissions in app settings.'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('All required permissions are granted!'),
+  //         backgroundColor: Colors.green,
+  //       ),
+  //     );
+  //   }
+  // }
 }
 
 class _LogPanel extends StatelessWidget {

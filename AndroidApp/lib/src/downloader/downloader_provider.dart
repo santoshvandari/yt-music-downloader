@@ -308,7 +308,7 @@ class DownloaderProvider extends ChangeNotifier {
           }
         } catch (e) {
           _log('Playlist error: $e');
-          throw e;
+          rethrow;
         }
       } else {
         totalFilesText = 'Single video';
