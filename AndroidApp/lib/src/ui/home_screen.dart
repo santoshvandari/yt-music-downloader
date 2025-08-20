@@ -263,7 +263,7 @@ class _ActionButtons extends StatelessWidget {
         runSpacing: 12,
         children: [
           ElevatedButton(
-            onPressed: p.isBusy ? null : () => p.start(),
+            onPressed: p.isBusy ? null : () => _startDownload(context, p),
             child: Text(p.isBusy ? 'Downloading…' : 'Start Download'),
           ),
           ElevatedButton(
@@ -277,6 +277,24 @@ class _ActionButtons extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _startDownload(BuildContext context, DownloaderProvider p) async {
+    if (p.url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a YouTube URL')),
+      );
+      return;
+    }
+    
+    if (p.outputDir == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an output folder')),
+      );
+      return;
+    }
+    
+    await p.start();
   }
 }
 
