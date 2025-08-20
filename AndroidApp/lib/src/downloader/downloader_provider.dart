@@ -220,23 +220,7 @@ class DownloaderProvider extends ChangeNotifier {
     }
   }
 
-  /// Get a user-friendly description of where files are saved
-  String get outputLocationDescription {
-    if (outputDir == null) return 'Not set';
-    
-    if (Platform.isAndroid) {
-      final path = outputDir!.path;
-      if (path.contains('/Android/data/')) {
-        return 'App Storage/Music (accessible via file manager)';
-      } else if (path.contains('/storage/emulated/0/')) {
-        return 'Device Storage/Downloads';
-      } else {
-        return 'App Internal Storage';
-      }
-    }
-    
-    return outputDir!.path;
-  }
+
 
   Future<void> start() async {
     if (url.isEmpty || outputDir == null || isBusy) return;
