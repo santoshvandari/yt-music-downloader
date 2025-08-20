@@ -16,8 +16,8 @@ void main() {
       final playlistUrl2 = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLrAXtmRdnEQy6nuLMt9xUCce3-QBvGr6h';
       
       // These should be detected as playlists
-      final kind1 = p._classifyUrl(playlistUrl1);
-      final kind2 = p._classifyUrl(playlistUrl2);
+      final kind1 = p.classifyUrl(playlistUrl1);
+      final kind2 = p.classifyUrl(playlistUrl2);
       
       expect(kind1.isPlaylist, true);
       expect(kind2.isPlaylist, true);
@@ -31,8 +31,8 @@ void main() {
       final videoUrl2 = 'https://youtu.be/dQw4w9WgXcQ';
       
       // These should be detected as single videos
-      final kind1 = p._classifyUrl(videoUrl1);
-      final kind2 = p._classifyUrl(videoUrl2);
+      final kind1 = p.classifyUrl(videoUrl1);
+      final kind2 = p.classifyUrl(videoUrl2);
       
       expect(kind1.isPlaylist, false);
       expect(kind2.isPlaylist, false);
@@ -46,7 +46,7 @@ void main() {
       final input = 'Test: Video | With "Invalid" Characters <>';
       final expected = 'Test_ Video _ With _Invalid_ Characters __';
       
-      expect(p._sanitize(input), expected);
+      expect(p.sanitize(input), expected);
     });
   });
 }

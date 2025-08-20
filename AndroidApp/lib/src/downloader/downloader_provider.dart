@@ -191,7 +191,7 @@ class DownloaderProvider extends ChangeNotifier {
       state = DownloadState.fetching;
       notifyListeners();
 
-      final kind = _classifyUrl(url);
+      final kind = classifyUrl(url);
       if (kind.isPlaylist) {
         try {
           // Resolve playlist by ID or URL
@@ -259,18 +259,18 @@ class DownloaderProvider extends ChangeNotifier {
 
   // Simple URL classifier to better detect playlists and extract IDs
   @visibleForTesting
-  _UrlKind _classifyUrl(String input) {
+  UrlKind classifyUrl(String input) {
     try {
       final u = Uri.parse(input);
       final host = u.host.toLowerCase();
       final listParam = u.queryParameters['list'];
       if (listParam != null && listParam.isNotEmpty) {
         // Any URL with list= should be treated as playlist
-        return _UrlKind(isPlaylist: true, playlistId: listParam);
+        return UrlKind(isPlaylist: true, playlistId: listParam);
       }
       // Dedicated playlist path
       if (host.contains('youtube.com') && u.path.contains('playlist')) {
-        return _UrlKind(isPlaylist: true);
+        return UrlKind(isPlaylist: true);
       }
       // Video-only forms
       String? vid;
@@ -281,11 +281,11 @@ class DownloaderProvider extends ChangeNotifier {
       } else if (host.contains('youtube.com') && u.path.contains('/watch')) {
         vid = u.queryParameters['v'];
       }
-      return _UrlKind(isPlaylist: false, videoId: vid);
+      return UrlKind(isPlaylist: false, videoId: vid);
     } catch (_) {
       // Fallback: basic heuristic
-      if (input.contains('list=')) return _UrlKind(isPlaylist: true);
-      return _UrlKind(isPlaylist: false);
+      if (input.contains('list=')) return UrlKind(isPlaylist: true);
+      return UrlKind(isPlaylist: false);
     }
   }
 
@@ -323,7 +323,7 @@ class DownloaderProvider extends ChangeNotifier {
       _log('File size: ${(totalSize / (1024 * 1024)).toStringAsFixed(1)} MB');
 
       // Prepare file with better error handling
-      final sanitizedTitle = _sanitize(video.title);
+      final sanitizedTitle = sanitize(video.title);
       final tempPath = p.join(outputDir!.path, '$sanitizedTitle.${audio.container.name}');
       
       // Ensure directory exists
@@ -458,7 +458,7 @@ class DownloaderProvider extends ChangeNotifier {
   }
 
   @visibleForTesting
-  String _sanitize(String s) {
+  String sanitize(String s) {
     return s.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
   }
 
@@ -468,9 +468,9 @@ class DownloaderProvider extends ChangeNotifier {
 class _Stopped implements Exception {}
 
 @visibleForTesting
-class _UrlKind {
+class UrlKind {
   final bool isPlaylist;
   final String? playlistId;
   final String? videoId;
-  _UrlKind({required this.isPlaylist, this.playlistId, this.videoId});
+  UrlKind({required this.isPlaylist, this.playlistId, this.videoId});
 }
