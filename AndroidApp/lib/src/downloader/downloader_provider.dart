@@ -43,17 +43,17 @@ class DownloaderProvider extends ChangeNotifier {
     Directory? base;
     try {
       if (Platform.isAndroid) {
-        // Request storage permissions first
-        await _requestStoragePermissions();
-        
-        // Try to use app-specific external storage directory (doesn't require permissions)
+        // Use app-specific external storage directory (doesn't require permissions)
+        // This is accessible to other apps and doesn't require special permissions
         final ext = await getExternalStorageDirectory();
         if (ext != null) {
           // Create a Music folder in the app's external directory
           base = Directory(p.join(ext.path, 'Music'));
+          _log('Using app external storage: ${base.path}');
         } else {
-          // Fallback to app documents directory
+          // Fallback to app documents directory (internal storage)
           base = await getApplicationDocumentsDirectory();
+          _log('Fallback to app documents: ${base.path}');
         }
       } else {
         base = await getDownloadsDirectory();
@@ -63,42 +63,84 @@ class DownloaderProvider extends ChangeNotifier {
     }
 
     if (base == null) {
-      // Fallback by platform
+      // Final fallback by platform
       try {
         if (Platform.isWindows) {
           final home = Platform.environment['USERPROFILE'];
           if (home != null) base = Directory(p.join(home, 'Downloads'));
-        } else {
+        } else if (Platform.isLinux || Platform.isMacOS) {
           final home = Platform.environment['HOME'];
           if (home != null) base = Directory(p.join(home, 'Downloads'));
         }
-      } catch (_) {}
+      } catch (e) {
+        _log('Platform fallback error: $e');
+      }
     }
 
+    // Last resort fallback
     base ??= Directory.systemTemp;
     outputDir = Directory(base.path);
+    
     try { 
       if (!await outputDir!.exists()) { 
         await outputDir!.create(recursive: true); 
-      } 
+        _log('Created directory: ${outputDir!.path}');
+      } else {
+        _log('Using existing directory: ${outputDir!.path}');
+      }
+      
+      // Test write permissions immediately
+      await _testWritePermissions();
     } catch (e) {
-      _log('Error creating directory: $e');
+      _log('Error creating/testing directory: $e');
+      // Try app documents as final fallback for Android
+      if (Platform.isAndroid) {
+        try {
+          base = await getApplicationDocumentsDirectory();
+          outputDir = Directory(base.path);
+          if (!await outputDir!.exists()) {
+            await outputDir!.create(recursive: true);
+          }
+          await _testWritePermissions();
+          _log('Using app documents as fallback: ${outputDir!.path}');
+        } catch (e2) {
+          _log('Final fallback failed: $e2');
+        }
+      }
     }
     notifyListeners();
+  }
+
+  Future<void> _testWritePermissions() async {
+    if (outputDir == null) return;
+    
+    try {
+      final testFile = File(p.join(outputDir!.path, '.test_write_${DateTime.now().millisecondsSinceEpoch}'));
+      await testFile.writeAsString('test');
+      await testFile.delete();
+      _log('Write permissions verified for: ${outputDir!.path}');
+    } catch (e) {
+      throw Exception('No write permission to directory ${outputDir!.path}: $e');
+    }
   }
 
   Future<void> _requestStoragePermissions() async {
     if (!Platform.isAndroid) return;
     
     try {
+      // Note: For app-specific external storage, we don't actually need these permissions
+      // But we request them anyway in case user wants to access shared storage later
+      
       // For Android 13+ (API 33+), request READ_MEDIA_AUDIO
       if (await Permission.audio.isDenied) {
-        await Permission.audio.request();
+        final result = await Permission.audio.request();
+        _log('Audio permission result: $result');
       }
       
       // For older Android versions, request storage permissions
       if (await Permission.storage.isDenied) {
-        await Permission.storage.request();
+        final result = await Permission.storage.request();
+        _log('Storage permission result: $result');
       }
     } catch (e) {
       _log('Permission request error: $e');
@@ -139,17 +181,30 @@ class DownloaderProvider extends ChangeNotifier {
     if (!Platform.isAndroid) return true;
     
     try {
-      // Check if we have the necessary permissions
+      // For app-specific external storage, we don't need special permissions
+      // But let's check if we have write access to our directory
+      if (outputDir != null) {
+        try {
+          await _testWritePermissions();
+          _log('Directory write access confirmed');
+          return true;
+        } catch (e) {
+          _log('Directory write test failed: $e');
+        }
+      }
+      
+      // Check system permissions as backup
       final audioPermission = await Permission.audio.status;
       final storagePermission = await Permission.storage.status;
       
       _log('Audio permission: $audioPermission');
       _log('Storage permission: $storagePermission');
       
-      return audioPermission.isGranted || storagePermission.isGranted;
+      // Return true if we have any permission or if we're using app-specific storage
+      return audioPermission.isGranted || storagePermission.isGranted || outputDir != null;
     } catch (e) {
       _log('Permission check error: $e');
-      return false;
+      return outputDir != null; // If we have a directory, assume we can use it
     }
   }
 
@@ -165,25 +220,49 @@ class DownloaderProvider extends ChangeNotifier {
     }
   }
 
+  /// Get a user-friendly description of where files are saved
+  String get outputLocationDescription {
+    if (outputDir == null) return 'Not set';
+    
+    if (Platform.isAndroid) {
+      final path = outputDir!.path;
+      if (path.contains('/Android/data/')) {
+        return 'App Storage/Music (accessible via file manager)';
+      } else if (path.contains('/storage/emulated/0/')) {
+        return 'Device Storage/Downloads';
+      } else {
+        return 'App Internal Storage';
+      }
+    }
+    
+    return outputDir!.path;
+  }
+
   Future<void> start() async {
     if (url.isEmpty || outputDir == null || isBusy) return;
     _stop = false;
     clearProgress();
 
     try {
-      // Check permissions first on Android
-      if (Platform.isAndroid) {
-        statusText = 'Checking permissions...';
-        state = DownloadState.fetching;
-        notifyListeners();
+      // Verify we can write to the output directory
+      statusText = 'Checking storage access...';
+      state = DownloadState.fetching;
+      notifyListeners();
+      
+      try {
+        await _testWritePermissions();
+        _log('Storage access verified');
+      } catch (e) {
+        // Try to reinitialize directory if write test fails
+        _log('Storage access failed, trying to reinitialize directory...');
+        await _initDefaultDir();
         
-        final hasPermissions = await checkPermissions();
-        if (!hasPermissions) {
-          _log('Requesting storage permissions...');
-          final granted = await requestPermissions();
-          if (!granted) {
-            throw Exception('Storage permissions are required to download files. Please grant permissions in app settings.');
-          }
+        // Test again after reinitializing
+        try {
+          await _testWritePermissions();
+          _log('Storage access verified after reinitializing');
+        } catch (e2) {
+          throw Exception('Cannot write to storage directory. Error: $e2');
         }
       }
 
@@ -335,15 +414,6 @@ class DownloaderProvider extends ChangeNotifier {
       final outFile = File(tempPath);
       if (await outFile.exists()) {
         await outFile.delete();
-      }
-      
-      // Test write permissions
-      try {
-        final testFile = File(p.join(outputDir!.path, '.test_write'));
-        await testFile.writeAsString('test');
-        await testFile.delete();
-      } catch (e) {
-        throw Exception('No write permission to output directory: $e');
       }
       
       final sink = outFile.openWrite();

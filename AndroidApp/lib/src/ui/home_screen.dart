@@ -173,26 +173,91 @@ class _FolderPicker extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  p.outputDir?.path ?? 'Loading...',
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.outputLocationDescription,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    if (p.outputDir != null)
+                      Text(
+                        p.outputDir!.path,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final dirPath = await getDirectoryPath();
-                  if (dirPath != null) {
-                    p.setOutputDir(Directory(dirPath));
-                  }
-                },
-                icon: const Icon(Icons.folder_open),
-                label: const Text('Browse'),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final dirPath = await getDirectoryPath();
+                      if (dirPath != null) {
+                        p.setOutputDir(Directory(dirPath));
+                      }
+                    },
+                    icon: const Icon(Icons.folder_open),
+                    label: const Text('Browse'),
+                  ),
+                  if (Platform.isAndroid) ...[
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () => _showStorageInfo(context, p),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16537E),
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.info_outline),
+                      label: const Text('Info'),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  void _showStorageInfo(BuildContext context, DownloaderProvider p) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Storage Information'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Files are saved to:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(p.outputLocationDescription),
+            const SizedBox(height: 8),
+            Text(
+              p.outputDir?.path ?? 'Not set',
+              style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'On Android, files are saved to the app\'s external storage directory. '
+              'This location is accessible through file managers and doesn\'t require special permissions.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -308,8 +373,12 @@ class _ActionButtons extends StatelessWidget {
 
   Future<void> _checkPermissions(BuildContext context, DownloaderProvider p) async {
     final hasPermissions = await p.checkPermissions();
+    if (!context.mounted) return;
+    
     if (!hasPermissions) {
       final granted = await p.requestPermissions();
+      if (!context.mounted) return;
+      
       if (granted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
