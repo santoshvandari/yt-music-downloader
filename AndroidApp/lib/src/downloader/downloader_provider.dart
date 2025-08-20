@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-// Only used on Android; safe to import cross-platform
 
 class DownloadLogEntry {
   final DateTime time;
@@ -43,28 +43,26 @@ class DownloaderProvider extends ChangeNotifier {
     Directory? base;
     try {
       if (Platform.isAndroid) {
-        // Common public Downloads path on Android
-        final candidate = Directory('/storage/emulated/0/Download');
-        if (await candidate.exists()) {
-          base = candidate;
+        // Request storage permissions first
+        await _requestStoragePermissions();
+        
+        // Try to use app-specific external storage directory (doesn't require permissions)
+        final ext = await getExternalStorageDirectory();
+        if (ext != null) {
+          // Create a Music folder in the app's external directory
+          base = Directory(p.join(ext.path, 'Music'));
         } else {
-          // Fallback to external storage dir
-          final ext = await getExternalStorageDirectory();
-          if (ext != null) {
-            final maybeDownloads = Directory(p.join(ext.path.split('Android').first, 'Download'));
-            if (await maybeDownloads.exists()) {
-              base = maybeDownloads;
-            } else {
-              base = ext;
-            }
-          }
+          // Fallback to app documents directory
+          base = await getApplicationDocumentsDirectory();
         }
       } else {
         base = await getDownloadsDirectory();
       }
-    } catch (_) {}
+    } catch (e) {
+      _log('Error setting up directory: $e');
+    }
 
-  if (base == null) {
+    if (base == null) {
       // Fallback by platform
       try {
         if (Platform.isWindows) {
@@ -77,11 +75,34 @@ class DownloaderProvider extends ChangeNotifier {
       } catch (_) {}
     }
 
-  base ??= Directory.systemTemp;
-  // Save directly into Downloads so other apps can find the files easily
-  outputDir = Directory(base.path);
-  try { if (!await outputDir!.exists()) { await outputDir!.create(recursive: true); } } catch (_) {}
+    base ??= Directory.systemTemp;
+    outputDir = Directory(base.path);
+    try { 
+      if (!await outputDir!.exists()) { 
+        await outputDir!.create(recursive: true); 
+      } 
+    } catch (e) {
+      _log('Error creating directory: $e');
+    }
     notifyListeners();
+  }
+
+  Future<void> _requestStoragePermissions() async {
+    if (!Platform.isAndroid) return;
+    
+    try {
+      // For Android 13+ (API 33+), request READ_MEDIA_AUDIO
+      if (await Permission.audio.isDenied) {
+        await Permission.audio.request();
+      }
+      
+      // For older Android versions, request storage permissions
+      if (await Permission.storage.isDenied) {
+        await Permission.storage.request();
+      }
+    } catch (e) {
+      _log('Permission request error: $e');
+    }
   }
 
   void setUrl(String v) {
@@ -114,32 +135,101 @@ class DownloaderProvider extends ChangeNotifier {
   bool get isBusy =>
       state == DownloadState.fetching || state == DownloadState.downloading || state == DownloadState.converting;
 
+  Future<bool> checkPermissions() async {
+    if (!Platform.isAndroid) return true;
+    
+    try {
+      // Check if we have the necessary permissions
+      final audioPermission = await Permission.audio.status;
+      final storagePermission = await Permission.storage.status;
+      
+      _log('Audio permission: $audioPermission');
+      _log('Storage permission: $storagePermission');
+      
+      return audioPermission.isGranted || storagePermission.isGranted;
+    } catch (e) {
+      _log('Permission check error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> requestPermissions() async {
+    if (!Platform.isAndroid) return true;
+    
+    try {
+      await _requestStoragePermissions();
+      return await checkPermissions();
+    } catch (e) {
+      _log('Permission request failed: $e');
+      return false;
+    }
+  }
+
   Future<void> start() async {
     if (url.isEmpty || outputDir == null || isBusy) return;
     _stop = false;
     clearProgress();
 
     try {
+      // Check permissions first on Android
+      if (Platform.isAndroid) {
+        statusText = 'Checking permissions...';
+        state = DownloadState.fetching;
+        notifyListeners();
+        
+        final hasPermissions = await checkPermissions();
+        if (!hasPermissions) {
+          _log('Requesting storage permissions...');
+          final granted = await requestPermissions();
+          if (!granted) {
+            throw Exception('Storage permissions are required to download files. Please grant permissions in app settings.');
+          }
+        }
+      }
+
       statusText = 'Fetching info...';
       state = DownloadState.fetching;
       notifyListeners();
 
       final kind = _classifyUrl(url);
       if (kind.isPlaylist) {
-        // Resolve playlist by ID or URL
-        final pl = kind.playlistId != null
-            ? await yt.playlists.get(PlaylistId(kind.playlistId!))
-            : await yt.playlists.get(url);
+        try {
+          // Resolve playlist by ID or URL
+          final pl = kind.playlistId != null
+              ? await yt.playlists.get(PlaylistId(kind.playlistId!))
+              : await yt.playlists.get(url);
 
-        // Stream videos and collect to list to show total count
-  final videos = await yt.playlists.getVideos(pl.id).toList();
-        totalFilesText = 'Playlist: ${videos.length} videos';
-        _log('Found playlist: ${pl.title} (${videos.length} videos)');
-        int i = 0;
-        for (final v in videos) {
-          if (_stop) throw _Stopped();
-          i++;
-          await _downloadVideo(v, index: i, total: videos.length);
+          _log('Found playlist: ${pl.title}');
+          
+          // Stream videos and collect to list to show total count
+          final videos = <Video>[];
+          await for (final video in yt.playlists.getVideos(pl.id)) {
+            if (_stop) throw _Stopped();
+            videos.add(video);
+            // Update count as we discover videos
+            totalFilesText = 'Playlist: ${videos.length} videos (discovering...)';
+            notifyListeners();
+          }
+          
+          totalFilesText = 'Playlist: ${videos.length} videos';
+          _log('Playlist contains ${videos.length} videos');
+          notifyListeners();
+          
+          int i = 0;
+          for (final v in videos) {
+            if (_stop) throw _Stopped();
+            i++;
+            try {
+              await _downloadVideo(v, index: i, total: videos.length);
+            } catch (e) {
+              _log('Failed to download "${v.title}": $e');
+              // Continue with next video instead of stopping entire playlist
+              continue;
+            }
+          }
+        } catch (e) {
+          _log('Playlist error: $e');
+          throw e;
         }
       } else {
         totalFilesText = 'Single video';
@@ -168,6 +258,7 @@ class DownloaderProvider extends ChangeNotifier {
   }
 
   // Simple URL classifier to better detect playlists and extract IDs
+  @visibleForTesting
   _UrlKind _classifyUrl(String input) {
     try {
       final u = Uri.parse(input);
@@ -209,25 +300,53 @@ class DownloaderProvider extends ChangeNotifier {
   }
 
   Future<void> _downloadVideo(Video video, {int? index, int? total}) async {
-    if (outputDir == null) return;
+    if (outputDir == null) {
+      throw Exception('Output directory not set');
+    }
+    
     currentTitle = video.title;
     if (index != null && total != null) {
       currentTitle = '${video.title} ($index/$total)';
     }
-    _log('Found: ${video.title}');
+    _log('Starting download: ${video.title}');
 
-    // Get audio stream (highest bitrate)
-    final manifest = await yt.videos.streamsClient.getManifest(video.id);
-    final audio = manifest.audioOnly.withHighestBitrate();
-    final totalSize = audio.size.totalBytes;
-    _log('File size: ${(totalSize / (1024 * 1024)).toStringAsFixed(1)} MB');
+    try {
+      // Get audio stream (highest bitrate)
+      final manifest = await yt.videos.streamsClient.getManifest(video.id);
+      final audioStreams = manifest.audioOnly;
+      if (audioStreams.isEmpty) {
+        throw Exception('No audio streams available for this video');
+      }
+      
+      final audio = audioStreams.withHighestBitrate();
+      final totalSize = audio.size.totalBytes;
+      _log('File size: ${(totalSize / (1024 * 1024)).toStringAsFixed(1)} MB');
 
-    // Prepare file
-    final sanitizedTitle = _sanitize(video.title);
-    final tempPath = p.join(outputDir!.path, '$sanitizedTitle.${audio.container.name}');
-    final outFile = File(tempPath);
-    if (await outFile.exists()) await outFile.delete();
-    final sink = outFile.openWrite();
+      // Prepare file with better error handling
+      final sanitizedTitle = _sanitize(video.title);
+      final tempPath = p.join(outputDir!.path, '$sanitizedTitle.${audio.container.name}');
+      
+      // Ensure directory exists
+      final dir = Directory(p.dirname(tempPath));
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      
+      final outFile = File(tempPath);
+      if (await outFile.exists()) {
+        await outFile.delete();
+      }
+      
+      // Test write permissions
+      try {
+        final testFile = File(p.join(outputDir!.path, '.test_write'));
+        await testFile.writeAsString('test');
+        await testFile.delete();
+      } catch (e) {
+        throw Exception('No write permission to output directory: $e');
+      }
+      
+      final sink = outFile.openWrite();
 
     // Download
     state = DownloadState.downloading;
@@ -266,56 +385,79 @@ class DownloaderProvider extends ChangeNotifier {
       }
     }
 
-    await sink.close();
+      await sink.close();
 
-    // Finalizing step with ffmpeg transcode to MP3
-    state = DownloadState.converting;
-    statusText = 'Converting to MP3...';
-    notifyListeners();
+      // Verify file was written successfully
+      if (!await outFile.exists()) {
+        throw Exception('Failed to save file - file does not exist after download');
+      }
+      
+      final actualSize = await outFile.length();
+      if (actualSize == 0) {
+        throw Exception('Downloaded file is empty');
+      }
+      
+      _log('Download completed, file size: ${(actualSize / (1024 * 1024)).toStringAsFixed(1)} MB');
 
-    final mp3Path = p.setExtension(tempPath, '.mp3');
-    bool converted = false;
-    try {
-      if (Platform.isAndroid || Platform.isIOS) {
-        // No bundled FFmpeg on mobile in this build; we'll fall back below
-        converted = false;
-      } else {
-        // Try system ffmpeg on desktop
-        final result = await Process.run(
-          'ffmpeg',
-          ['-y', '-i', tempPath, '-b:a', '320k', mp3Path],
-        );
-        if (result.exitCode == 0) {
-          converted = true;
+      // Finalizing step with ffmpeg transcode to MP3
+      state = DownloadState.converting;
+      statusText = 'Converting to MP3...';
+      notifyListeners();
+
+      final mp3Path = p.setExtension(tempPath, '.mp3');
+      bool converted = false;
+      try {
+        if (Platform.isAndroid || Platform.isIOS) {
+          // No bundled FFmpeg on mobile in this build; we'll fall back below
+          converted = false;
         } else {
-          _log('ffmpeg error: ${result.stderr}'.trim());
+          // Try system ffmpeg on desktop
+          final result = await Process.run(
+            'ffmpeg',
+            ['-y', '-i', tempPath, '-b:a', '320k', mp3Path],
+          );
+          if (result.exitCode == 0) {
+            converted = true;
+          } else {
+            _log('ffmpeg error: ${result.stderr}'.trim());
+          }
+        }
+      } catch (e) {
+        _log('Conversion error: $e');
+      }
+      
+      if (converted) {
+        try { 
+          await File(tempPath).delete(); 
+          _log('Converted to MP3 successfully');
+        } catch (_) {}
+      } else {
+        // Fallback: simple copy to .mp3 if transcoding not available/failed
+        try {
+          await File(tempPath).copy(mp3Path);
+          await File(tempPath).delete();
+          _log('Saved as MP3 (container copy)');
+        } catch (e) {
+          _log('Conversion fallback failed, keeping original: $e');
+          // Keep the original file if copy fails
         }
       }
-    } catch (e) {
-      _log('Conversion error: $e');
-    }
-    if (converted) {
-      try { await File(tempPath).delete(); } catch (_) {}
-    } else {
-      // Fallback: simple copy to .mp3 if transcoding not available/failed
-      try {
-        await File(tempPath).copy(mp3Path);
-        await File(tempPath).delete();
-        _log('Saved without transcoding (container copy)');
-      } catch (_) {
-        _log('Conversion fallback failed; kept original');
-      }
-    }
 
-    state = DownloadState.completed;
-    progress = 100;
-    speedText = 'Completed';
-    etaText = 'Done';
-    _log('Completed: ${video.title}');
-    notifyListeners();
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+      state = DownloadState.completed;
+      progress = 100;
+      speedText = 'Completed';
+      etaText = 'Done';
+      _log('Completed: ${video.title}');
+      notifyListeners();
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      
+    } catch (e) {
+      _log('Download failed for "${video.title}": $e');
+      rethrow;
+    }
   }
 
+  @visibleForTesting
   String _sanitize(String s) {
     return s.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
   }
@@ -325,6 +467,7 @@ class DownloaderProvider extends ChangeNotifier {
 
 class _Stopped implements Exception {}
 
+@visibleForTesting
 class _UrlKind {
   final bool isPlaylist;
   final String? playlistId;
