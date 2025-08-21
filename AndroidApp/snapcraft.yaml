@@ -1,0 +1,32 @@
+name: yt-music-downloader
+base: core22
+version: '1.0.0'
+summary: YouTube Music Downloader
+description: |
+  A Flutter-based app to download music from YouTube Music.
+
+confinement: strict
+grade: stable
+
+apps:
+  yt-music-downloader:
+    command: bin/yt_music_flutter
+    plugs:
+      - network
+      - home
+      - desktop
+      - x11
+      - wayland
+
+parts:
+  yt-music-downloader:
+    plugin: flutter
+    source: .
+    flutter-target: lib/main.dart
+    stage-packages:
+      - libgtk-3-0
+      - libgdk-pixbuf2.0-0
+      - libgdk-pixbuf2.0-bin
+      - libgdk-pixbuf2.0-common
+      - shared-mime-info
+      - libcanberra-gtk3-module
