@@ -11,18 +11,9 @@ apps:
     command: bin/yt_music_flutter
     plugs:
       - desktop
-      - desktop-legacy
       - x11
-      - wayland
       - network
-      - network-bind
       - home
-      - removable-media
-      - gsettings
-      - audio-playback
-      - pulseaudio
-    extensions:
-      - gnome
 
 parts:
   yt-music-downloader:
@@ -30,26 +21,49 @@ parts:
     source: build/linux/x64/release/bundle
     source-type: local
     stage-packages:
-      - libgtk-3-0
-      - libglib2.0-0
-      - libgobject-2.0-0
-      - libwayland-egl1
+      # GTK and Cairo dependencies
+      - libgtk-3-0t64
+      - libcairo-gobject2
+      - libcairo2
+      - libgdk-pixbuf-2.0-0
+      # Pango text rendering
+      - libpango-1.0-0
+      - libpangocairo-1.0-0
+      - libpangoft2-1.0-0
+      # Font and text dependencies
+      - libfontconfig1
+      - libfribidi0
+      - libharfbuzz0b
+      - libdatrie1
+      - libthai0
+      - libgraphite2-3
+      # X11 dependencies
+      - libx11-6
+      - libxau6
+      - libxcomposite1
+      - libxcursor1
+      - libxdamage1
+      - libxdmcp6
+      - libxext6
+      - libxfixes3
+      - libxi6
+      - libxinerama1
+      - libxrandr2
+      - libxrender1
+      - libxcb1
       - libxcb-render0
       - libxcb-shm0
-      - libxcb1
       - libxkbcommon0
-      - libegl1-mesa
-      - libgl1-mesa-glx
-      - libglu1-mesa
+      # Wayland dependencies
+      - libwayland-client0
+      - libwayland-cursor0
+      - libwayland-egl1
+      # Other dependencies
+      - libepoxy0
+      - libpixman-1-0
+      - libjpeg-turbo8
+      - libatk1.0-0t64
+      - libatk-bridge2.0-0t64
+      - libatspi2.0-0t64
     organize:
       '*': bin/
-    override-build: |
-      craftctl default
-      # Ensure executable permissions
-      chmod +x $CRAFTCTL_PART_INSTALL/bin/yt_music_flutter
-
-slots:
-  yt-music-downloader:
-    interface: dbus
-    bus: session
-    name: com.example.ytmusicdownloader
