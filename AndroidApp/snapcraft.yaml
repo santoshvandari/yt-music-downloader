@@ -2,68 +2,31 @@ name: yt-music-downloader
 base: core22
 version: '1.0.0'
 summary: YouTube Music Downloader
-description: A simple Flutter-based app for downloading YouTube Music tracks.
-grade: stable
+description: |
+  A Flutter-based app to download music from YouTube Music.
+
 confinement: strict
+grade: stable
 
 apps:
   yt-music-downloader:
     command: bin/yt_music_flutter
     plugs:
-      - desktop
-      - x11
       - network
       - home
+      - desktop
+      - x11
+      - wayland
 
 parts:
   yt-music-downloader:
-    plugin: dump
-    source: build/linux/x64/release/bundle
-    source-type: local
+    plugin: flutter
+    source: .
+    flutter-target: lib/main.dart
     stage-packages:
-      # GTK and Cairo dependencies
-      - libgtk-3-0t64
-      - libcairo-gobject2
-      - libcairo2
-      - libgdk-pixbuf-2.0-0
-      # Pango text rendering
-      - libpango-1.0-0
-      - libpangocairo-1.0-0
-      - libpangoft2-1.0-0
-      # Font and text dependencies
-      - libfontconfig1
-      - libfribidi0
-      - libharfbuzz0b
-      - libdatrie1
-      - libthai0
-      - libgraphite2-3
-      # X11 dependencies
-      - libx11-6
-      - libxau6
-      - libxcomposite1
-      - libxcursor1
-      - libxdamage1
-      - libxdmcp6
-      - libxext6
-      - libxfixes3
-      - libxi6
-      - libxinerama1
-      - libxrandr2
-      - libxrender1
-      - libxcb1
-      - libxcb-render0
-      - libxcb-shm0
-      - libxkbcommon0
-      # Wayland dependencies
-      - libwayland-client0
-      - libwayland-cursor0
-      - libwayland-egl1
-      # Other dependencies
-      - libepoxy0
-      - libpixman-1-0
-      - libjpeg-turbo8
-      - libatk1.0-0t64
-      - libatk-bridge2.0-0t64
-      - libatspi2.0-0t64
-    organize:
-      '*': bin/
+      - libgtk-3-0
+      - libgdk-pixbuf2.0-0
+      - libgdk-pixbuf2.0-bin
+      - libgdk-pixbuf2.0-common
+      - shared-mime-info
+      - libcanberra-gtk3-module
