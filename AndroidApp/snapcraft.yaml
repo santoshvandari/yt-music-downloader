@@ -19,7 +19,10 @@ apps:
       - home
       - removable-media
       - gsettings
-    desktop: snap/gui/yt_music_downloader.desktop
+      - audio-playback
+      - pulseaudio
+    extensions:
+      - gnome
 
 parts:
   yt-music-downloader:
@@ -35,13 +38,18 @@ parts:
       - libxcb-shm0
       - libxcb1
       - libxkbcommon0
+      - libegl1-mesa
+      - libgl1-mesa-glx
+      - libglu1-mesa
     organize:
       '*': bin/
-    
-  desktop-file:
-    plugin: dump
-    source: snap/gui/
-    organize:
-      'yt_music_downloader.desktop': meta/gui/yt_music_downloader.desktop
-      'icon.png': meta/gui/icon.png
+    override-build: |
+      craftctl default
+      # Ensure executable permissions
+      chmod +x $CRAFTCTL_PART_INSTALL/bin/yt_music_flutter
 
+slots:
+  yt-music-downloader:
+    interface: dbus
+    bus: session
+    name: com.example.ytmusicdownloader
