@@ -1,4 +1,4 @@
-# YouTube Music Downloader Pro
+# YouTube Music Downloader
 
 A modern, cross-platform application for downloading YouTube videos and playlists with high-quality MP3 audio extraction. Features both a sleek GUI interface and a command-line version for different user preferences.
 
@@ -10,7 +10,7 @@ A modern, cross-platform application for downloading YouTube videos and playlist
 
 ## Features
 
-### 🖥️ GUI Version
+### GUI Version
 - **Modern Dark Theme**: Sleek, professional interface with smooth animations
 - **Real-time Progress**: Live download progress with speed and ETA indicators
 - **Batch Downloads**: Support for entire playlists with queue management
@@ -161,22 +161,23 @@ pyinstaller --onefile --windowed --icon=assets/icon.png src/gui_main.py
 
 ```
 youtubevideodownloader/
-├── 📁 src/                     # Source code
-│   ├── 🐍 gui_main.py          # GUI application (main)
-│   └── 🐍 cli_main.py          # Command-line interface
-├── 📁 assets/                  # Application resources
-│   ├── 🖼️ icon.png             # Application icon
-│   └── 🖼️ logo.jpeg            # Logo image
-├── 📁 packaging/               # Build configurations
-│   └── 📁 windows/             # Windows-specific build
-│       ├── 🦇 build.bat        # Build script
-│       └── 🖼️ logo.ico         # Windows icon
-├── 📁 download/                # Default download folder
-├── 📄 requirements.txt         # Python dependencies
-├── 📄 README.md                # This file
-├── 📄 CODE_OF_CONDUCT.md       # Community guidelines
-├── 📄 CONTRIBUTING.md          # Contribution guide
-└── 📄 .gitignore               # Git ignore rules
+├── src/                     # Source code
+│   ├── gui_main.py          # GUI application (main)
+│   └── cli_main.py          # Command-line interface
+├── assets/                  # Application resources
+│   ├── icon.png             # Application icon
+│   └── logo.jpeg            # Logo image
+├── packaging/               # Build configurations
+│   └── windows/             # Windows-specific build
+│       ├── build.bat        # Build script
+│       └── logo.ico         # Windows icon
+├── download/                # Default download folder
+├── requirements.txt         # Python dependencies
+├── README.md                # This file
+├── CODE_OF_CONDUCT.md       # Community guidelines
+├── CONTRIBUTING.md          # Contribution guide
+├── LICENSE                  # License file
+└── .gitignore               # Git ignore rules
 ```
 
 ## Dependencies
