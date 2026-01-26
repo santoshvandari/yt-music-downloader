@@ -454,17 +454,18 @@ class DownloaderProvider extends ChangeNotifier {
       _log('Download completed, file size: ${(actualSize / (1024 * 1024)).toStringAsFixed(1)} MB');
 
       // Finalizing step with ffmpeg transcode to MP3
-      state = DownloadState.converting;
-      statusText = 'Converting to MP3...';
-      notifyListeners();
+      // On mobile, we don't have ffmpeg bundled, so strictly keep original format
+      // to avoid creating corrupted/invalid "MP3" files that are actually WebM/MP4.
+      if (Platform.isAndroid || Platform.isIOS) {
+        _log('Saved as ${audio.container.name.toUpperCase()} (conversion skipped on mobile)');
+      } else {
+        state = DownloadState.converting;
+        statusText = 'Converting to MP3...';
+        notifyListeners();
 
-      final mp3Path = p.setExtension(tempPath, '.mp3');
-      bool converted = false;
-      try {
-        if (Platform.isAndroid || Platform.isIOS) {
-          // No bundled FFmpeg on mobile in this build; we'll fall back below
-          converted = false;
-        } else {
+        final mp3Path = p.setExtension(tempPath, '.mp3');
+        bool converted = false;
+        try {
           // Try system ffmpeg on desktop
           final result = await Process.run(
             'ffmpeg',
@@ -475,25 +476,17 @@ class DownloaderProvider extends ChangeNotifier {
           } else {
             _log('ffmpeg error: ${result.stderr}'.trim());
           }
-        }
-      } catch (e) {
-        _log('Conversion error: $e');
-      }
-      
-      if (converted) {
-        try { 
-          await File(tempPath).delete(); 
-          _log('Converted to MP3 successfully');
-        } catch (_) {}
-      } else {
-        // Fallback: simple copy to .mp3 if transcoding not available/failed
-        try {
-          await File(tempPath).copy(mp3Path);
-          await File(tempPath).delete();
-          _log('Saved as MP3 (container copy)');
         } catch (e) {
-          _log('Conversion fallback failed, keeping original: $e');
-          // Keep the original file if copy fails
+          _log('Conversion error: $e');
+        }
+        
+        if (converted) {
+          try { 
+            await File(tempPath).delete(); 
+            _log('Converted to MP3 successfully');
+          } catch (_) {}
+        } else {
+          _log('Conversion failed, kept original ${audio.container.name.toUpperCase()}');
         }
       }
 

@@ -218,6 +218,9 @@ class ModernDownloader:
         self.url_entry.bind("<KeyPress>", self.on_key_press)
         self.url_entry.bind("<FocusIn>", self.on_url_focus_in)
         self.url_entry.bind("<FocusOut>", self.on_url_focus_out)
+        
+        # Bind Control-A for select all (needed on Linux)
+        self.url_entry.bind("<Control-a>", self.select_all)
 
         # Enhanced Folder Selection with better styling
         folder_frame = Frame(main_frame, bg="#1a1a2e")
@@ -828,6 +831,12 @@ class ModernDownloader:
                 self._find_and_animate_buttons(child)
         except:
             pass
+
+    def select_all(self, event):
+        """Select all text in the entry widget"""
+        self.url_entry.select_range(0, END)
+        self.url_entry.icursor(END)
+        return "break"
 
     def paste_url(self):
         """Paste URL from clipboard"""
