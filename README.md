@@ -34,9 +34,13 @@ A modern, cross-platform application for downloading YouTube videos and playlist
 
 ### Windows Users (Recommended)
 
-1. Download the latest executable from [Releases](../../releases)
+1. Download the latest executable from [Releases](https://github.com/santoshvandari/yt-music-downloader/releases)
 2. Run `YouTubeMusicDownloader.exe`
-3. No installation required!
+<!-- 
+### Linux Users
+
+1. Download the latest executable from [Releases](https://github.com/santoshvandari/yt-music-downloader/releases)
+2. Run `yt_music_downloader-1.0.0+1-linux.deb` -->
 
 ### Run from Source
 
@@ -76,7 +80,7 @@ A modern, cross-platform application for downloading YouTube videos and playlist
    # CLI version
    python src/cli_main.py
    ```
-
+<!-- 
    ### Linux (Flutter UI)
 
    Requires Flutter. Run the modern UI on Linux:
@@ -85,27 +89,7 @@ A modern, cross-platform application for downloading YouTube videos and playlist
    cd AndroidApp
    flutter pub get
    flutter run -d linux
-   ```
-
-   ### Android (Flutter UI)
-
-   Build and install the Android app:
-
-   ```bash
-   cd AndroidApp
-   flutter pub get
-   flutter build apk --release
-   # optional: install to a connected device
-   adb install -r build/app/outputs/flutter-apk/app-release.apk
-   ```
-
-   ### Snap (Linux)
-
-   Run the following command.
-
-   ```bash
-   snap install yt-music-downloader
-   ```
+   ``` -->
 
 ## Usage Guide
 
@@ -160,24 +144,25 @@ pyinstaller --onefile --windowed --icon=assets/icon.png src/gui_main.py
 ## Project Structure
 
 ```
-youtubevideodownloader/
-├── src/                     # Source code
-│   ├── gui_main.py          # GUI application (main)
-│   └── cli_main.py          # Command-line interface
-├── assets/                  # Application resources
-│   ├── icon.png             # Application icon
-│   └── logo.jpeg            # Logo image
-├── packaging/               # Build configurations
-│   └── windows/             # Windows-specific build
-│       ├── build.bat        # Build script
-│       └── logo.ico         # Windows icon
-├── download/                # Default download folder
-├── requirements.txt         # Python dependencies
-├── README.md                # This file
-├── CODE_OF_CONDUCT.md       # Community guidelines
-├── CONTRIBUTING.md          # Contribution guide
-├── LICENSE                  # License file
-└── .gitignore               # Git ignore rules
+yt-music-downloader/
+├── Desktop/                # Default download folder
+   ├── src/                     # Source code
+   │   ├── gui_main.py          # GUI application (main)
+   │   └── cli_main.py          # Command-line interface
+   ├── assets/                  # Application resources
+   │   ├── icon.png             # Application icon
+   │   └── logo.jpeg            # Logo image
+   ├── packaging/               # Build configurations
+   │   └── windows/             # Windows-specific build
+   │       ├── build.bat        # Build script
+   │       └── logo.ico         # Windows icon
+   ├── download/                # Default download folder
+   ├── requirements.txt         # Python dependencies
+   ├── README.md                # This file
+   ├── CODE_OF_CONDUCT.md       # Community guidelines
+   ├── CONTRIBUTING.md          # Contribution guide
+   ├── LICENSE                  # License file
+   └── .gitignore               # Git ignore rules
 ```
 
 ## Dependencies
